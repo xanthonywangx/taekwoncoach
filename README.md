@@ -29,7 +29,7 @@ Without an API key, steps 2 and 6 fall back to Python and the built-in tips, so 
 | `scoring.py` | Going through 4 checks and tiers |
 | `nemotron.py` | Nemotron pass 1 and pass 2 |
 | `feedback.py` | Defining each criterias and return messages for each tiers |
-| `pipeline.py` | Runs the whole flow (`grade_video`) |
+| `pipeline.py` | Runs the whole flow and calls `grade_video` |
 | `storage.py` | Saves full results, images and clips to `results/` |
 | `db.py` | SpacetimeDB: kick lifecycle, users, command-line checks |
 | `spacetimedb/src/index.ts` | SpacetimeDB tables and reducers (publish from this folder) |

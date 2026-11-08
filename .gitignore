@@ -1,0 +1,12 @@
+.venv/
+.env
+models/*.task
+results/
+*.mp4
+*.webm
+__pycache__/
+.pytest_cache/
+.DS_Store
+debug_*.jpg
+.vscode/
+.DS_Store

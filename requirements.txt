@@ -1,0 +1,10 @@
+mediapipe==0.10.32
+opencv-python
+numpy
+openai
+python-dotenv
+fastapi
+uvicorn
+python-multipart
+pytest
+httpx

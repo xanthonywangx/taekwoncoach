@@ -86,8 +86,14 @@ def test_full_user_flow(live, video_file):
     img = c.get(f"/results/{r['id']}/chamber.jpg")
     assert img.status_code == 200 and img.content[:2] == b"\xff\xd8"   # JPEG
 
-    # delete removes it from their list
-    assert c.delete(f"/results/{r['id']}").json()["db_deleted"] is True
+    # home feed shows it with the username
+    feed = c.get("/kicks", params={"limit": 200}).json()
+    assert any(k["result_id"] == r["id"] and k["username"] == name for k in feed)
+
+    # only the owner can delete; then it's gone from their list
+    assert c.delete(f"/results/{r['id']}").status_code == 400
+    assert c.delete(f"/results/{r['id']}", params={"username": "someone_else"}).status_code == 403
+    assert c.delete(f"/results/{r['id']}", params={"username": name}).json()["db_deleted"] is True
     assert c.get(f"/users/{name}/kicks").json() == []
     assert c.get(f"/results/{r['id']}/clip").status_code == 404   # bytes deleted too
 

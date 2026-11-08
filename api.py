@@ -9,12 +9,15 @@ POST /login                    log in.  JSON {"username": "..."} -> the user, 40
 GET  /users?search=ha          search users by name (empty = everyone)
 GET  /users/{username}         profile + overall statline (averages, best, pass rate per check)
 GET  /users/{username}/kicks   that user's kicks, newest first, each with its statline
+GET  /kicks?limit=50           everyone's kicks, newest first (home feed); each includes "username"
 
 Grading:
 POST /grade                    multipart form: "video" = the clip (webm or mp4), "username" = who kicked.
                                404 before grading if the username has no account. No username = not saved
                                to SpacetimeDB (results/ folder only).
-DELETE /results/{id}           deletes the kick's files and its SpacetimeDB rows
+DELETE /results/{id}?username=haris
+                               deletes the kick's files and SpacetimeDB rows. The username must match the
+                               kick's owner (403 otherwise). Honor system: there are no passwords.
 GET  /results                  newest results first (history list); ?limit=20
 GET  /results/{id}             the saved result JSON
 GET  /results/{id}/{image}.jpg chamber, extension, or contact_sheet
@@ -131,8 +134,20 @@ def user_kicks(username: str, limit: int = 50):
     return kicks
 
 
+@app.get("/kicks")
+def recent_kicks(limit: int = 50):
+    return _db_call(db.recent_kicks, limit)
+
+
 @app.delete("/results/{rid}")
-def delete_result(rid: str):
+def delete_result(rid: str, username: str = ""):
+    if config.spacetime_enabled():
+        owner = _db_call(db.kick_owner, rid)
+        if owner is not None:
+            if not username.strip():
+                raise HTTPException(status_code=400, detail="Type your player name to delete this kick.")
+            if username.strip().lower() != owner:
+                raise HTTPException(status_code=403, detail=f'Only "{owner}" can delete this kick.')
     deleted_files = storage.delete(rid)
     db_deleted = False
     if config.spacetime_enabled():

@@ -82,8 +82,9 @@ Open http://localhost:8000/docs to try it.
 | `GET /users?search=ha` | **search** users by name (empty = everyone) |
 | `GET /users/{username}` | **profile**: total/completed kicks, best and average score, pass rate per check, latest kick |
 | `GET /users/{username}/kicks` | **that user's videos**, newest first, each with its statline |
+| `GET /kicks?limit=50` | **everyone's** kicks, newest first (home feed); each statline has `username` |
+| `DELETE /results/{id}?username=haris` | delete a kick; the name must match its owner (400 missing, 403 wrong) |
 | `POST /grade` | multipart form: `video` (webm or mp4) + `username`. Returns the result JSON. 404 before grading if the username has no account |
-| `DELETE /results/{id}` | deletes a kick's files and its SpacetimeDB rows |
 | `GET /results?limit=20` | newest results first, for a history list |
 | `GET /results/{id}` | one saved result |
 | `GET /results/{id}/chamber.jpg` (also `extension`, `contact_sheet`) | debug images |
@@ -172,6 +173,26 @@ SPACETIME_LIVE_DB=taekwoncoach python -m pytest tests/test_spacetime_live.py -v 
 ```
 If you change a table's columns and publish fails, wipe the local data and republish:
 `spacetime publish taekwoncoach --server local --delete-data=always --yes`
+
+### Frontend (`frontend/`)
+React + Vite + TypeScript, one scrolling page:
+- feed of kicks (everyone, or one player after a search), newest first; thumbnails only, the video loads
+  when a kick is opened
+- click a kick: panel with stars (1 per check passed), tier, video, chamber/extension frames, the 4 checks,
+  coach feedback, delete (type the player name)
+- **+ NEW KICK**: camera, countdown, record (auto-stops at 15 s), watch it back / retake, player name
+  (checks as you type: existing player, or "Create player" for a new name), submit, grade opens on its own
+- the page behind any panel dims and greys; Esc / ✕ / clicking outside closes it and turns the camera off
+
+```
+cd frontend
+npm install
+cp .env.example .env        # VITE_API_URL=http://localhost:8000
+npm run dev                 # http://localhost:5173
+```
+Theme: every color, font and the pixel shadow are CSS variables at the top of `src/index.css`. The
+`.sky` layer in `App.tsx` is where the scrolling pixel clouds go (CSS only, see the comment in index.css).
+Camera only works on `localhost` or `https`.
 
 ### React example
 ```jsx

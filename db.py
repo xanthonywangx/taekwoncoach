@@ -132,15 +132,43 @@ def kicks_for(username, limit=50):
     if user is None:
         return None
     kicks = sql(f"SELECT * FROM kick WHERE user_id = {int(user['user_id'])}")
+    return _statlines(kicks, {user["user_id"]: user["username"]}, limit)
+
+
+def recent_kicks(limit=50):
+    """Everyone's kicks, newest first (the home feed). Each statline includes its username."""
+    users = {u["user_id"]: u["username"] for u in sql("SELECT * FROM user")}
+    return _statlines(sql("SELECT * FROM kick"), users, limit)
+
+
+def kick_owner(result_id):
+    """Username that owns a kick, or None if the kick isn't in the database."""
+    if not RESULT_ID_RE.match(result_id or ""):
+        return None
+    kicks = sql(f"SELECT * FROM kick WHERE result_id = '{result_id}'")
+    if not kicks:
+        return None
+    users = sql(f"SELECT * FROM user WHERE user_id = {int(kicks[0]['user_id'])}")
+    return users[0]["username"] if users else None
+
+
+def _statlines(kicks, usernames, limit):
+    """Newest `limit` kicks -> statlines (joins evaluation + media_asset; never touches media_data)."""
+    kicks = sorted(kicks, key=lambda k: k["recorded_time"], reverse=True)[:limit]
     ids = {k["kick_id"] for k in kicks}
+    if not ids:
+        return []
     evals = {e["kick_id"]: e for e in sql("SELECT * FROM evaluation") if e["kick_id"] in ids}
     files = {}
     for a in sql("SELECT * FROM media_asset"):
         if a["kick_id"] in ids:
             files.setdefault(a["kick_id"], {})[FILE_KEYS.get(a["file_type_id"], "other")] = a["file_name"]
-    out = [_statline(k, evals.get(k["kick_id"]), files.get(k["kick_id"], {})) for k in kicks]
-    out.sort(key=lambda k: k["recorded_time"], reverse=True)
-    return out[:limit]
+    out = []
+    for k in kicks:
+        line = _statline(k, evals.get(k["kick_id"]), files.get(k["kick_id"], {}))
+        line["username"] = usernames.get(k["user_id"], "")
+        out.append(line)
+    return out
 
 
 def _statline(kick, ev, files):

@@ -24,8 +24,12 @@ def save(result, images, video_path=None):
     for name, data in images.items():
         (d / f"{name}.jpg").write_bytes(data)
     if video_path:
-        clip_name = "clip" + (Path(video_path).suffix or ".mp4")
-        shutil.copy(video_path, d / clip_name)
+        # Convert to H.264 mp4 so it plays in every browser; keep the original if that fails.
+        import media
+        ok, why = media.normalize_clip(video_path, d / "clip.mp4")
+        if not ok:
+            shutil.copy(video_path, d / ("clip" + (Path(video_path).suffix or ".mp4")))
+            result.setdefault("notes", []).append(f"Clip kept in its original format ({why}); it may not play in every browser.")
         result["clip_url"] = f"/results/{rid}/clip"
     # URLs the frontend can put straight into <img src> (prefix with the API base URL)
     result["images"] = {name: f"/results/{rid}/{name}.jpg" for name in images}

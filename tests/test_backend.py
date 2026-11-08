@@ -517,7 +517,12 @@ def test_api_delete_kick(video_file, isolated, monkeypatch):
         rid = c.post("/grade", files={"video": ("kick.mp4", f, "video/mp4")}).json()["id"]
     monkeypatch.setattr(config, "SPACETIME_DB", "taekwon-db")
     fake = FakeDB(monkeypatch)
-    assert c.delete(f"/results/{rid}").json() == {"ok": True, "files_deleted": True, "db_deleted": True}
+    monkeypatch.setattr(db, "kick_owner", lambda r: "haris")
+    assert c.delete(f"/results/{rid}").status_code == 400                       # no name given
+    assert c.delete(f"/results/{rid}", params={"username": "anthony"}).status_code == 403
+    assert fake.calls == []                                                      # nothing deleted yet
+    assert c.delete(f"/results/{rid}", params={"username": " Haris "}).json() == \
+        {"ok": True, "files_deleted": True, "db_deleted": True}
     assert fake.calls == [("delete_kick", (rid,))]
     assert c.get(f"/results/{rid}").status_code == 404
 
@@ -552,3 +557,16 @@ def test_api_serves_media_from_db_when_not_on_disk(monkeypatch):
     r = c.get("/results/not-on-this-laptop/clip")
     assert r.status_code == 200 and r.content == b"VIDEOBYTES" and r.headers["content-type"] == "video/webm"
     assert c.get("/results/not-on-this-laptop/chamber.jpg").status_code == 404
+
+
+def test_recent_kicks_feed_includes_usernames(monkeypatch):
+    tables = {
+        "user": [{"user_id": 1, "username": "haris"}, {"user_id": 2, "username": "anthony"}],
+        "kick": [{"kick_id": i, "user_id": 1 + i % 2, "result_id": f"r{i}", "fail_reason": "",
+                  "recorded_time": f"2026-11-08T12:0{i}:00+00:00", "status_id": 4} for i in range(5)],
+        "evaluation": [], "media_asset": [],
+    }
+    monkeypatch.setattr(db, "sql", lambda q: tables[q.split("FROM ")[1].split()[0]])
+    feed = db.recent_kicks(limit=3)
+    assert [k["result_id"] for k in feed] == ["r4", "r3", "r2"]
+    assert [k["username"] for k in feed] == ["haris", "anthony", "haris"]

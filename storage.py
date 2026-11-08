@@ -1,7 +1,7 @@
 """Saves each graded kick to results/<id>/ (result.json, debug images, the clip).
 
-This is the local stand-in for SpacetimeDB. When you add SpacetimeDB, keep these function names
-and swap the insides, so pipeline.py and api.py don't change.
+Images, the clip and the full result.json always live here. The pipeline also records a summary row
+in SpacetimeDB (db.py) when a username is given and SPACETIME_DB is set.
 """
 import json
 import shutil
@@ -63,8 +63,22 @@ def list_results(limit=20):
         r = load(d.name) if d.is_dir() else None
         if r is None:
             continue
-        out.append({k: r.get(k) for k in ("id", "saved_at", "status", "passed", "tier", "feedback_source")}
+        out.append({k: r.get(k) for k in ("id", "saved_at", "username", "status", "passed", "tier", "feedback_source")}
                    | {"thumbnail": r.get("images", {}).get("extension")})
         if len(out) >= limit:
             break
     return out
+
+
+def update(result):
+    """Rewrites result.json for an already-saved result (keeps its images and clip)."""
+    (config.RESULTS_DIR / result["id"] / "result.json").write_text(json.dumps(result, indent=2))
+
+
+def delete(rid):
+    """Removes a result folder (images, clip, result.json). Returns True if it existed."""
+    d = config.RESULTS_DIR / rid
+    if not d.exists() or not d.is_dir():
+        return False
+    shutil.rmtree(d)
+    return True

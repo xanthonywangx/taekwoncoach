@@ -10,3 +10,6 @@ __pycache__/
 debug_*.jpg
 .vscode/
 .DS_Store
+taekwon-db/
+node_modules/
+taekwon-db/

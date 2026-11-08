@@ -31,6 +31,10 @@ def print_result(r):
     w = r.get("window")
     if w:
         print(f"\nKick window: {w['start_s']}s - {w['end_s']}s (found by {w['source']})")
+    if r.get("db_saved"):
+        print("Saved to SpacetimeDB: yes")
+    if r.get("username"):
+        print(f"SpacetimeDB: {'saved' if r.get('db_saved') else 'NOT saved'} under user '{r['username']}'")
     for n in r.get("notes", []):
         print(f"Note: {n}")
     print(f"Timings: {r.get('timings_s')}")
@@ -70,6 +74,17 @@ def check_setup():
             ok = False
             print(f"Nemotron: FAILED ({type(e).__name__}: {e})")
             print("  Check the key in .env and that NEMOTRON_MODEL matches the model ID on build.nvidia.com")
+    if not config.spacetime_enabled():
+        print("SpacetimeDB: SPACETIME_DB not set in .env (kicks only saved to results/)")
+    else:
+        try:
+            import db
+            n = len(db.sql("SELECT * FROM user"))
+            print(f"SpacetimeDB: OK, database '{config.SPACETIME_DB}' at {config.SPACETIME_URL}, {n} user(s)")
+        except Exception as e:
+            ok = False
+            print(f"SpacetimeDB: FAILED ({type(e).__name__}: {e})")
+            print("  Is `spacetime start` running, did you `spacetime publish taekwoncoach --server local`, and is SPACETIME_DB=taekwoncoach in .env?")
     print("\nAll good." if ok else "\nFix the items above, then run --check again.")
 
 
@@ -80,6 +95,7 @@ if __name__ == "__main__":
     src.add_argument("--record", action="store_true")
     src.add_argument("--check", action="store_true")
     ap.add_argument("--no-nemotron", action="store_true")
+    ap.add_argument("--user", dest="user", help="username to save the kick under in SpacetimeDB (created if new)")
     ap.add_argument("--json", action="store_true", help="print the raw JSON the API would return")
     a = ap.parse_args()
 
@@ -88,13 +104,20 @@ if __name__ == "__main__":
         sys.exit()
 
     from pipeline import grade_video
+    if a.user and config.spacetime_enabled():   # command line convenience: sign up if needed
+        import db
+        try:
+            if db.get_user(a.user) is None:
+                print(f"Creating account '{db.create_user(a.user)}'")
+        except db.UserError as e:
+            sys.exit(str(e))
     path = a.video
     if a.record:
         from capture import record_clip
         path = record_clip()
     print("Grading... (Nemotron calls can take 10-30s)" if not a.no_nemotron and config.nemotron_available()
           else "Grading (offline mode)...")
-    result = grade_video(path, use_nemotron=not a.no_nemotron)
+    result = grade_video(path, use_nemotron=not a.no_nemotron, username=a.user)
     if a.json:
         print(json.dumps(result, indent=2))
     print_result(result)

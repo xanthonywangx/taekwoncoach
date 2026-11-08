@@ -1,4 +1,4 @@
-# Taekwoncoach backend
+# Taekwon-Coach backend
 
 Grades a beginner front snap kick from a side-view webcam clip.
 
@@ -10,7 +10,7 @@ Grades a beginner front snap kick from a side-view webcam clip.
    - Python backup: fast MediaPipe "lite" scan for the moment the ankle is highest
 3. Pad the window by 0.5 s
 4. MediaPipe "heavy" pose on the window only, then fix any left/right leg mix-ups
-5. Python grading engine: finds the exact frames near Nemotron's moments and runs the 4 checks (1 or 0 each)
+5. Python grading engine: evaluates frames within the selected timeframe and runs the 4 checks (1 if passes threshold, 0 if not)
    - Chamber = tightest knee angle, before the extension
    - Extension = after the chamber, largest knee angle, least blurry among near-ties, must pass 90 degrees
    - If Nemotron's moments don't fit the pose data, the same rules run on Python alone
@@ -22,20 +22,20 @@ Without an API key, steps 2 and 6 fall back to Python and the built-in tips, so 
 ## Files
 | File | Job |
 |---|---|
-| `config.py` | Thresholds and settings |
+| `config.py` | Rule Configuration |
 | `video.py` | Load clips, contact sheet, debug images |
 | `pose.py` | MediaPipe landmarks |
 | `kick_finder.py` | Python's kick finder |
-| `scoring.py` | The 4 checks and tiers |
+| `scoring.py` | Going through 4 checks and tiers |
 | `nemotron.py` | Nemotron pass 1 and pass 2 |
-| `feedback.py` | Built-in tips (offline backup) |
-| `pipeline.py` | Runs the whole flow (`grade_video`) |
+| `feedback.py` | Defining each criterias and return messages for each tiers |
+| `pipeline.py` | Runs the whole flow and calls `grade_video` |
 | `storage.py` | Saves full results, images and clips to `results/` |
-| `db.py` | SpacetimeDB: kick lifecycle, users, command-line checks |
+| `db.py` | SpacetimeDB: kick lifecycle, user data, command-line checks |
 | `spacetimedb/src/index.ts` | SpacetimeDB tables and reducers (publish from this folder) |
 | `spacetime.json` | tells the `spacetime` CLI where the module is |
 | `api.py` | HTTP API for the frontend |
-| `main.py` | Command line for testing |
+| `main.py` | Command line for testing without frontend |
 | `capture.py` | Webcam recorder for testing |
 
 ## Setup (once per laptop)

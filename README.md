@@ -35,7 +35,7 @@ Without an API key, steps 2 and 6 fall back to Python and the built-in tips, so 
 | `spacetimedb/src/index.ts` | SpacetimeDB tables and reducers (publish from this folder) |
 | `spacetime.json` | tells the `spacetime` CLI where the module is |
 | `api.py` | HTTP API for the frontend |
-| `main.py` | Command line for testing |
+| `main.py` | Command line for testing without frontend |
 | `capture.py` | Webcam recorder for testing |
 
 ## Setup (once per laptop)

@@ -26,7 +26,7 @@ Without an API key, steps 2 and 6 fall back to Python and the built-in tips, so 
 | `video.py` | Load clips, contact sheet, debug images |
 | `pose.py` | MediaPipe landmarks |
 | `kick_finder.py` | Python's kick finder |
-| `scoring.py` | The 4 checks and tiers |
+| `scoring.py` | Going through 4 checks and tiers |
 | `nemotron.py` | Nemotron pass 1 and pass 2 |
 | `feedback.py` | Built-in tips (offline backup) |
 | `pipeline.py` | Runs the whole flow (`grade_video`) |
